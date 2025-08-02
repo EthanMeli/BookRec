@@ -21,6 +21,8 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: ""
   }
+}, {
+  timestamps: true
 });
 
 // hash password before saving to database
@@ -34,7 +36,12 @@ userSchema.pre("save", async function(next) {
   this.password = await bcrypt.hash(this.password, salt);
 
   next();
-})
+});
+
+// Compare password function
+userSchema.methods.comparePassword = async function (userPassword) {
+  return await bcrypt.compare(userPassword, this.password);
+}
 
 // Creates users in mongoDB using the defined schema
 const User = mongoose.model("User", userSchema);
