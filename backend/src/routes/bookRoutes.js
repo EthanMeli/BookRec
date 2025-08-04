@@ -51,7 +51,7 @@ router.get("/", protectRoute, async (req, res) => {
       .populate("user", "username profileImage"); // Note we store user as an object ID in the Book model, so we populate it to get user details to display to UI (username and profileImage)
       
     const totalBooks = await Book.countDocuments(); // Get the total number of books
-    
+
     // Default of 200 status code is sent if not specified
     res.send({
       books,
@@ -61,6 +61,38 @@ router.get("/", protectRoute, async (req, res) => {
     }); 
   } catch (error) {
     console.log("Error in get all books route", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+})
+
+router.delete("/:id", protectRoute, async (req, res) => {
+  try {
+    const book = await Book.findById(req.params.id); // id comes from URL param (/:id)
+    if (!book) {
+      return res.status(404).json({ message: "Book not found" });
+    }
+
+    // Check if user is creator of the book
+    if (book.user.toString() !== req.user._id.toString()) {
+      return res.status(401).json({ message: "You are not authorized to delete this book" });
+    }
+
+    // Delete the image from cloudinary
+    if (book.image && book.image.includes("cloudinary")) {
+      try {
+        const publicId = book.image.split("/").pop().split(".")[0]; // Extract public ID from the image URL
+        await cloudinary.uploader.destroy(publicId); // Delete the image from cloudinary
+      } catch (error) {
+        console.log("Error deleting image from cloudinary", error);
+        return res.status(500).json({ message: "Error deleting image from cloudinary" });
+      }
+    }
+
+    await book.deleteOne(); // Delete the book from the database
+
+    res.status(200).json({ message: "Book deleted successfully" });
+  } catch (error) {
+    console.log("Error deleting book", error);
     res.status(500).json({ message: "Internal server error" });
   }
 })
