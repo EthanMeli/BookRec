@@ -1,4 +1,5 @@
 import express from "express";
+import cors from "cors"; // Import CORS for cross-origin requests
 import "dotenv/config"; // Allow using environment variables
 
 import authRoutes from "./routes/authRoutes.js"; // Need .js extension here
@@ -9,6 +10,7 @@ const app = express();
 const PORT = process.env.PORT;
 
 app.use(express.json()); // Middleware to parse JSON bodies
+app.use(cors()); // Enable CORS for all routes
 
 app.use("/api/auth", authRoutes);
 app.use("/api/books", bookRoutes);
