@@ -13,7 +13,7 @@ import User from "../models/User.js"; // Import User model
 const protectRoute = async (req, res, next) => {
   try {
     // get token
-    const token = req.headers("Authorization").replace("Bearer ", ""); // View above commented example of response
+    const token = req.headers.authorization?.replace("Bearer ", ""); // View above commented example of response
 
     if (!token) {
       return res.status(401).json({ message: "No token provided, authorization denied" });
