@@ -1,12 +1,14 @@
-import { View, Text, KeyboardAvoidingView, Platform, ScrollView, TextInput, TouchableOpacity, Image, Alert } from 'react-native'
+import { View, Text, KeyboardAvoidingView, Platform, ScrollView, TextInput, TouchableOpacity, Image, Alert, ActivityIndicator } from 'react-native'
 import { useState } from 'react'
 import { useRouter } from 'expo-router';
 import styles from "../../assets/styles/create.styles";
 import { Ionicons } from "@expo/vector-icons";
 import COLORS from "../../constants/colors";
+import { useAuthStore } from "../../store/authStore";
 
 import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system';
+import { API_URL } from '../../constants/api';
 
 export default function Create() {
   const [title, setTitle] = useState("");
@@ -17,6 +19,7 @@ export default function Create() {
   const [loading, setLoading] = useState(false);
 
   const router = useRouter();
+  const { token } = useAuthStore();
 
   const pickImage = async () => {
     try {
@@ -59,7 +62,53 @@ export default function Create() {
     }
   };
 
-  const handleSubmit = async () => {};
+  const handleSubmit = async () => {
+    if (!title || !caption || !imageBase64 || !rating) {
+      Alert.alert("Error", "Please fill in all fields");
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      // get file extension from URI or default to jpeg
+      const uriParts = image.split(".");
+      const fileType = uriParts[uriParts.length - 1];
+      const imageType = fileType ? `image/${fileType.toLowerCase()}` : "image/jpeg";
+
+      const imageDataUrl = `data:${imageType};base64,${imageBase64}`;
+
+      const response = await fetch(`${API_URL}/books`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title,
+          caption,
+          rating: rating.toString(),
+          image: imageDataUrl,
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Something went wrong");
+
+      Alert.alert("Success", "Your book recommendation has been posted!");
+      setTitle("");
+      setCaption("");
+      setRating(3);
+      setImage(null);
+      setImageBase64(null);
+      router.push("/");
+    } catch (error) {
+      console.error("Error creating post:", error);
+      Alert.alert("Error", error.message || "Something went wrong");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const renderRatingPicker = () => {
     const stars = [];
@@ -132,6 +181,37 @@ export default function Create() {
                 )}
               </TouchableOpacity>
             </View>
+
+            {/* CAPTION */}
+            <View style={styles.formGroup}>
+              <Text style={styles.label}>Caption</Text>
+              <TextInput
+                style={styles.textArea}
+                placeholder="Write your review or thoughts about this book..."
+                placeholderTextColor={COLORS.placeholderText}
+                value={caption}
+                onChangeText={setCaption}
+                multiline
+              />
+            </View>
+
+            {/* SHARE */}
+            <TouchableOpacity style={styles.button} onPress={handleSubmit}
+            disabled={loading}>
+              {loading ? (
+                <ActivityIndicator color={COLORS.white} />
+              ) : (
+                <>
+                  <Ionicons
+                    name="cloud-upload-outline"
+                    size={20}
+                    color={COLORS.white}
+                    style={styles.buttonIcon}
+                  />
+                  <Text style={styles.buttonText}>Share</Text>
+                </>
+              )}
+            </TouchableOpacity>
           </View>
         </View>
       </ScrollView>
