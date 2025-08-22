@@ -10,7 +10,7 @@ import { connectDB } from "./lib/db.js";
 const app = express();
 const PORT = process.env.PORT;
 
-app.use(express.json()); // Increased limit for large payloads
+app.use(express.json({ limit: "10mb" })); // Increased limit for large payloads
 app.use(cors()); // Enable CORS for all routes
 
 job.start();
