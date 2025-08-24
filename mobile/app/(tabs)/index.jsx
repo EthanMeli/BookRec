@@ -15,7 +15,7 @@ export default function Home() {
   const { token } = useAuthStore();
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+  const [refreshing, setRefreshing] = useState(false); // For pull to refresh
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
 
@@ -105,7 +105,7 @@ export default function Home() {
       )
     }
     return stars;
-  }
+  };
 
   if (loading) {
     return (
